@@ -2,7 +2,7 @@
 
 ![Lua](https://img.shields.io/badge/Language-Lua-blue?style=for-the-badge&logo=lua)
 ![Roblox](https://img.shields.io/badge/Platform-Roblox-red?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Work_In_Progress-yellow?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 
 A multifunctional utility script designed for the fan-made Roblox game **SERVERBLIGHT**. 
 This project aims to enhance the survival experience for the Red Team by providing essential visual overlays and automation tools to counter the Blue Team and the Serverblight entity.
@@ -19,13 +19,10 @@ This project aims to enhance the survival experience for the Red Team by providi
   - 🔴 **Red:** Blue Team (Enemies).
   - 🟣 **Purple:** Serverblight / Monsters.
 - **⚡ Teleportation System** — Quickly reposition yourself:
-  - Teleport to specific players.
-  - Teleport to death zones (for quick escapes).
-  - Teleport directly to the Intel or the Red Base.
-- **🤖 Auto-Intel (Farming)** — Fully automates the objective:
-  - Checks for Intel spawn every second.
-  - Teleports to the Intel, picks it up, and teleports back to the Red Base to capture.
-  - Optionally returns to the previous position after a successful capture.
+  - Teleport directly to the Red Base (Coordinates can be configured).
+- **🎨 Modern UI** — Built with the Rayfield Gen2 library. Features a custom dark-purple theme, smooth animations, and draggable windows.
+- **🤖 Auto-Intel (In Development)** — Fully automates the objective:
+  - *Coming soon: Will check for Intel spawn, teleport to it, pick it up, and deliver it to the base.*
 
 ---
 
@@ -33,27 +30,23 @@ This project aims to enhance the survival experience for the Red Team by providi
 
 1. Launch **Roblox** and join the SERVERBLIGHT game.
 2. Open your preferred script executor (Delta, Fluxus, Wave, Synapse, etc.).
-3. Copy the contents of `src/main.lua`.
-4. Paste the code into the executor and click **Execute**.
-5. (Optional) Adjust object names and coordinates in `src/config.lua` if the game has been updated.
+3. Open the `main.lua` file in this repository.
+4. Copy all the code and paste it into your executor.
+5. Click **Execute**. The UI will appear in the center of your screen.
 
 ---
 
 ## ⚙️ Configuration
 
-All core settings are located in `src/config.lua`. If a feature stops working, the game developers likely changed the object names. You can update them here:
+All core settings are located at the very top of `main.lua`. If a feature stops working, the game developers likely changed the object names or map layout. You can update them here:
 
 ```lua
-return {
-    -- Object Names (Use dump_names.lua to find them)
-    INTEL_NAME = "Intel", 
+local Config = {
     MONSTER_NAMES = {"Serverblight", "Blight"},
-    
-    -- Coordinates
-    BASE_POSITION = Vector3.new(0, 0, 0), -- Red Base coordinates
+    BASE_POSITION = Vector3.new(0, 0, 0), -- Change this to your actual Red Base coordinates
     
     -- Toggles
-    ESP_ENABLED = true,
-    AUTO_INTEL_ENABLED = false,
+    ESP_PLAYERS = true,
+    ESP_MONSTERS = true,
     FULLBRIGHT_ENABLED = true,
 }
