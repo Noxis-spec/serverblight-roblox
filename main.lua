@@ -1,5 +1,5 @@
 -- ==========================================
--- SERVERBLIGHT Utility - Rayfield (Optimized)
+-- SERVERBLIGHT Utility - Full Optimized Version
 -- ==========================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -11,7 +11,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = {
     MONSTER_NAMES = {"Serverblight", "Blight", "Unknown"},
-    ITEM_NAMES = {"SmallHP", "LargeAmmo", "MediumAmmo", "Resupply", "Health"},
+    ITEM_NAMES = {"SmallHP", "LargeAmmo", "MediumAmmo", "Resupply", "Health", "Pills"},
     BASE_POSITION = Vector3.new(0, 0, 0),
     
     ESP_PLAYERS = true,
@@ -21,6 +21,7 @@ local Config = {
     FULLBRIGHT = false,
     INF_AMMO = false,
     AUTO_INTEL = false,
+    SET_HEALTH = 0, -- 0 = выключено, 300 = поставить 300 макс. HP
 }
 
 -- ==========================================
@@ -45,37 +46,49 @@ local function toggleFullbright(state)
 end
 
 -- ==========================================
--- MODULE: Infinite Ammo (999 в магазине)
+-- MODULE: Smart Infinite Ammo
 -- ==========================================
 local processedWeapons = {}
 local function processWeapon(weapon)
     if processedWeapons[weapon] then return end
     if weapon:IsA("Tool") and weapon:FindFirstChild("Values") then
-        local ammo = weapon.Values:FindFirstChild("Ammo")
+        local totalAmmo = weapon.Values:FindFirstChild("TotalAmmo")
         
-        if ammo then
+        if totalAmmo then
             processedWeapons[weapon] = true
-            -- Ставим 999 сразу при взятии
-            ammo.Value = 999
             
-            ammo.Changed:Connect(function()
-                -- Если магазин пустеет (выстрел или перезарядка), снова ставим 999
-                -- При этом TotalAmmo не трогаем, он будет тратиться как положено
-                if Config.INF_AMMO and ammo.Value < 999 then
-                    ammo.Value = 999
+            totalAmmo.Changed:Connect(function()
+                -- Если патроны упали ниже 10, восполняем до 999
+                if Config.INF_AMMO and totalAmmo.Value < 10 then
+                    totalAmmo.Value = 999
                 end
             end)
         end
     end
 end
 
--- Отслеживаем добавление оружия в инвентарь (вместо бесконечного цикла)
 LocalPlayer.Backpack.ChildAdded:Connect(function(child)
     if Config.INF_AMMO then processWeapon(child) end
 end)
 
 -- ==========================================
--- MODULE: Auto Intel (Оптимизированный)
+-- MODULE: Custom Max Health
+-- ==========================================
+local function applyCustomHealth()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") and Config.SET_HEALTH > 0 then
+        char.Humanoid.MaxHealth = Config.SET_HEALTH
+        char.Humanoid.Health = Config.SET_HEALTH
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    if Config.SET_HEALTH > 0 then applyCustomHealth() end
+end)
+
+-- ==========================================
+-- MODULE: Auto Intel
 -- ==========================================
 local function teleportTo(pos)
     local char = LocalPlayer.Character
@@ -117,11 +130,10 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- MODULE: ESP (Оптимизированный)
+-- MODULE: Optimized ESP & Items
 -- ==========================================
 local trackedESP = {}
 
--- Функция создания Health Bar (Pulse Hub style)
 local function createHealthBar(adornee, isMonster)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "ESP_HP"
@@ -166,7 +178,6 @@ local function createHealthBar(adornee, isMonster)
     return billboard, fill, text
 end
 
--- Универсальная обводка
 local function applyOutline(instance, color)
     if instance:IsA("Model") then
         local h = Instance.new("Highlight")
@@ -190,26 +201,23 @@ local function applyOutline(instance, color)
     return nil
 end
 
--- Функция добавления объекта в ESP
 local function addObjectToESP(obj, isMonster, isItem)
     if trackedESP[obj] then return end
     
-    local color = Color3.fromRGB(255, 0, 0) -- Red for players
-    if isMonster then color = Color3.fromRGB(0, 170, 255) end -- Blue for monsters
-    if isItem then color = Color3.fromRGB(0, 255, 0) end -- Green for items
+    local color = Color3.fromRGB(255, 0, 0) -- Красный (Игроки)
+    if isMonster then color = Color3.fromRGB(0, 170, 255) end -- Синий (Монстры)
+    if isItem then color = Color3.fromRGB(0, 255, 0) end -- Зеленый (Предметы)
 
     local outline = applyOutline(obj, color)
     local hp, fill, txt = nil, nil, nil
     
-    -- Полоску ХП даем только игрокам и монстрам
     if not isItem then
         hp, fill, txt = createHealthBar(obj, isMonster)
     end
     
-    trackedESP[obj] = {Outline = outline, HP = hp, Fill = fill, Text = txt, IsMonster = isMonster, IsItem = isItem}
+    trackedESP[obj] = {Outline = outline, HP = hp, Fill = fill, Text = txt, IsItem = isItem}
 end
 
--- Функция обновления позиций и ХП (только для уже добавленных)
 local function updateESP()
     for obj, data in pairs(trackedESP) do
         if not obj or not obj.Parent then
@@ -229,12 +237,10 @@ local function updateESP()
     end
 end
 
--- Сканируем карту ТОЛЬКО при добавлении новых объектов (оптимизация)
 local function scanObject(obj)
     if not obj then return end
     local name = obj.Name:lower()
 
-    -- Монстры
     if Config.ESP_MONSTERS and obj:IsA("Model") then
         for _, mName in ipairs(Config.MONSTER_NAMES) do
             if name:find(mName:lower()) then
@@ -244,7 +250,6 @@ local function scanObject(obj)
         end
     end
 
-    -- Предметы
     if Config.ESP_ITEMS and (obj:IsA("Model") or obj:IsA("BasePart")) then
         for _, iName in ipairs(Config.ITEM_NAMES) do
             if name:find(iName:lower()) then
@@ -255,19 +260,17 @@ local function scanObject(obj)
     end
 end
 
--- Отслеживаем появление новых объектов на карте
 Workspace.DescendantAdded:Connect(function(obj)
     if Config.ESP_MONSTERS or Config.ESP_ITEMS then
-        task.wait(0.1) -- Небольшая задержка чтобы объект успел инициализироваться
+        task.wait(0.1)
         scanObject(obj)
     end
 end)
 
--- Сканируем игроков
 local function scanPlayer(plr)
     if plr ~= LocalPlayer and Config.ESP_PLAYERS then
         plr.CharacterAdded:Connect(function(char)
-            task.wait(1) -- Ждем спавна
+            task.wait(1)
             addObjectToESP(char, false, false)
         end)
         if plr.Character then
@@ -279,7 +282,7 @@ Players.PlayerAdded:Connect(scanPlayer)
 for _, p in ipairs(Players:GetPlayers()) do scanPlayer(p) end
 
 -- ==========================================
--- UI (Rayfield Original)
+-- UI (Rayfield)
 -- ==========================================
 local Window = Rayfield:CreateWindow({
     Name = "SERVERBLIGHT [Optimized]",
@@ -329,15 +332,30 @@ VisualsTab:CreateToggle({
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 
 PlayerTab:CreateToggle({
-    Name = "Infinite Ammo (999 Mag)",
+    Name = "Infinite Ammo (Smart)",
     CurrentValue = Config.INF_AMMO,
     Flag = "Inf_Ammo",
     Callback = function(state) 
         Config.INF_AMMO = state 
         if state then
-            -- Принудительно обрабатываем текущее оружие
             for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do processWeapon(item) end
+            if LocalPlayer.Character then
+                for _, item in pairs(LocalPlayer.Character:GetChildren()) do processWeapon(item) end
+            end
         end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "Max Health (Set HP)",
+    Range = {0, 1000},
+    Increment = 50,
+    Suffix = " HP",
+    CurrentValue = 200,
+    Flag = "MaxHealth",
+    Callback = function(Value)
+        Config.SET_HEALTH = Value
+        if Value > 0 then applyCustomHealth() end
     end,
 })
 
@@ -369,4 +387,4 @@ PlayerTab:CreateButton({
 -- ==========================================
 Rayfield:LoadConfiguration()
 RunService.RenderStepped:Connect(updateESP)
-print("[+] SERVERBLIGHT Utility loaded (Optimized + Rayfield).")
+print("[+] SERVERBLIGHT Utility loaded (Full Version).")
