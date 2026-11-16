@@ -14,7 +14,7 @@ local VirtualUser = game:GetService("VirtualUser")
 -- ==========================================
 local Config = {
     MONSTER_NAMES = {"Serverblight", "Blight", "Unknown"},
-    BASE_POSITION = Vector3.new(0, 0, 0), -- Тут поменяешь на координаты базы (если нужно)
+    BASE_POSITION = Vector3.new(0, 0, 0), -- Set your Red Base coordinates here
     
     ESP_PLAYERS = true,
     ESP_MONSTERS = true,
@@ -91,7 +91,6 @@ local function teleportTo(pos)
     end
 end
 
--- Вспомогательная функция для получения позиции кейса/зоны
 local function getBriefcase(name)
     local map = workspace:FindFirstChild("Map")
     local briefcases = map and map:FindFirstChild("Briefcases")
@@ -99,7 +98,6 @@ local function getBriefcase(name)
 end
 
 local function pressE()
-    -- Эмуляция нажатия E для подбора
     local VirtualInputManager = game:GetService("VirtualInputManager")
     VirtualInputManager:SendKeyEvent(true, "E", false, game)
     task.wait(0.1)
@@ -109,19 +107,14 @@ end
 task.spawn(function()
     while task.wait(0.1) do
         if Config.AUTO_INTEL and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character.Humanoid.Health > 0 then
-            
-            -- 1. Ищем Синий кейс (интел врагов)
-            -- Если в игре он называется по-другому, напиши мне
             local enemyIntel = getBriefcase("Blue") 
             
-            -- Если нашли кейс на карте
             if enemyIntel and enemyIntel.Parent.Name == "Briefcases" then
                 teleportTo(enemyIntel.Position + Vector3.new(0, 2, 0))
                 task.wait(0.2)
-                pressE() -- Пытаемся подобрать
+                pressE()
                 task.wait(0.5)
                 
-                -- 2. Телепорт в зону сдачи Красных (Red)
                 local dropZone = getBriefcase("Red")
                 if dropZone then
                     teleportTo(dropZone.Position + Vector3.new(0, 2, 0))
@@ -254,7 +247,7 @@ local function updateESP()
 end
 
 -- ==========================================
--- UI (Свое легкое меню с вкладками)
+-- UI (Custom Lightweight Menu)
 -- ==========================================
 local function createCustomUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -264,7 +257,7 @@ local function createCustomUI()
     if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 260, 0, 360) -- Увеличили высоту
+    MainFrame.Size = UDim2.new(0, 260, 0, 360) 
     MainFrame.Position = UDim2.new(0.5, -130, 0.5, -180)
     MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     MainFrame.BorderSizePixel = 0
@@ -273,7 +266,6 @@ local function createCustomUI()
     MainFrame.Parent = ScreenGui
     Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
-    -- Заголовок
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 0, 35)
     Title.BackgroundColor3 = Color3.fromRGB(35, 0, 50)
@@ -284,7 +276,6 @@ local function createCustomUI()
     Title.Parent = MainFrame
     Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
 
-    -- Контейнер для контента
     local Content = Instance.new("Frame")
     Content.Size = UDim2.new(1, -20, 1, -50)
     Content.Position = UDim2.new(0, 10, 0, 40)
@@ -333,7 +324,6 @@ local function createCustomUI()
         end)
     end
 
-    -- Заполняем меню
     createToggle("ESP Players", 0, Config.ESP_PLAYERS, function(s) Config.ESP_PLAYERS = s end)
     createToggle("ESP Monsters", 35, Config.ESP_MONSTERS, function(s) Config.ESP_MONSTERS = s end)
     createToggle("Health Bars", 70, Config.SHOW_HEALTH, function(s) Config.SHOW_HEALTH = s end)
@@ -343,9 +333,8 @@ local function createCustomUI()
     end)
     createToggle("Infinite Ammo", 140, Config.INF_AMMO, function(s) Config.INF_AMMO = s end)
     
-    -- Auto Farm Toggle
     local autoBtn = createToggle("Auto Intel Farm", 175, Config.AUTO_INTEL, function(s) Config.AUTO_INTEL = s end)
-    autoBtn.TextColor3 = Color3.fromRGB(255, 200, 0) -- Желтый цвет для акцента
+    autoBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
 
     createButton("Teleport to Enemy Intel", 220, function()
         local intel = getBriefcase("Blue")
