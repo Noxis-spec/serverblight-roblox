@@ -1,23 +1,20 @@
 -- ==========================================
--- SERVERBLIGHT Utility - Mobile Edition (Auto-Farm)
+-- SERVERBLIGHT Utility - Mobile Edition (Ultimate Fix)
 -- ==========================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
-local VirtualUser = game:GetService("VirtualUser")
 
--- ==========================================
--- CONFIGURATION
--- ==========================================
 local Config = {
     MONSTER_NAMES = {"Serverblight", "Blight", "Unknown"},
-    BASE_POSITION = Vector3.new(0, 0, 0), -- Set your Red Base coordinates here
+    ITEM_NAMES = {"SmallHP", "LargeAmmo", "MediumAmmo", "Resupply", "Health", "Pills"},
+    BASE_POSITION = Vector3.new(0, 0, 0),
     
     ESP_PLAYERS = true,
     ESP_MONSTERS = true,
+    ESP_ITEMS = true,
     SHOW_HEALTH = true,
     FULLBRIGHT = false,
     INF_AMMO = false,
@@ -46,10 +43,9 @@ local function toggleFullbright(state)
 end
 
 -- ==========================================
--- MODULE: Infinite Ammo (Optimized)
+-- MODULE: Infinite Ammo (Instant 999)
 -- ==========================================
 local processedWeapons = {}
-
 local function processWeapon(weapon)
     if processedWeapons[weapon] then return end
     if weapon:IsA("Tool") and weapon:FindFirstChild("Values") then
@@ -58,14 +54,15 @@ local function processWeapon(weapon)
         
         if ammo and totalAmmo then
             processedWeapons[weapon] = true
-            local function restoreAmmo()
+            local function refill()
                 if Config.INF_AMMO then
                     ammo.Value = 999
                     totalAmmo.Value = 999
                 end
             end
-            restoreAmmo()
-            ammo.Changed:Connect(restoreAmmo)
+            refill()
+            ammo.Changed:Connect(refill)
+            totalAmmo.Changed:Connect(refill)
         end
     end
 end
@@ -107,14 +104,12 @@ end
 task.spawn(function()
     while task.wait(0.1) do
         if Config.AUTO_INTEL and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character.Humanoid.Health > 0 then
-            local enemyIntel = getBriefcase("Blue") 
-            
+            local enemyIntel = getBriefcase("Blue")
             if enemyIntel and enemyIntel.Parent.Name == "Briefcases" then
                 teleportTo(enemyIntel.Position + Vector3.new(0, 2, 0))
                 task.wait(0.2)
                 pressE()
                 task.wait(0.5)
-                
                 local dropZone = getBriefcase("Red")
                 if dropZone then
                     teleportTo(dropZone.Position + Vector3.new(0, 2, 0))
@@ -126,7 +121,7 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- MODULE: ESP (Box & Health)
+-- MODULE: ESP (Fixed + Items)
 -- ==========================================
 local trackedESP = {}
 
@@ -134,14 +129,14 @@ local function createHealthBar(adornee, isMonster)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "ESP_HP"
     billboard.Adornee = adornee
-    billboard.Size = UDim2.new(0, 70, 0, 14)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.Size = UDim2.new(0, 90, 0, 16)
+    billboard.StudsOffset = Vector3.new(0, 3.2, 0)
     billboard.AlwaysOnTop = true
     billboard.Parent = adornee
 
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
-    bg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    bg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
     bg.BorderSizePixel = 0
     bg.Parent = billboard
     Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
@@ -149,7 +144,7 @@ local function createHealthBar(adornee, isMonster)
     local barBg = Instance.new("Frame")
     barBg.Size = UDim2.new(1, -2, 1, -2)
     barBg.Position = UDim2.new(0, 1, 0, 1)
-    barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    barBg.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     barBg.BorderSizePixel = 0
     barBg.Parent = bg
     Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, 3)
@@ -166,79 +161,98 @@ local function createHealthBar(adornee, isMonster)
     text.BackgroundTransparency = 1
     text.Text = "100"
     text.TextColor3 = Color3.fromRGB(255, 255, 255)
-    text.TextStrokeTransparency = 0.5
+    text.TextStrokeTransparency = 0.7
     text.Font = Enum.Font.GothamBold
-    text.TextSize = 10
+    text.TextSize = 11
     text.Parent = bg
 
     return billboard, fill, text
 end
 
+-- Универсальная функция обводки (использует Highlight для моделей и Box для предметов)
+local function applyOutline(instance, color)
+    if instance:IsA("Model") then
+        local h = Instance.new("Highlight")
+        h.Adornee = instance
+        h.FillTransparency = 1 -- Только контур
+        h.OutlineColor = color
+        h.OutlineTransparency = 0
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        h.Parent = instance
+        return h
+    elseif instance:IsA("BasePart") then
+        local box = Instance.new("BoxHandleAdornment")
+        box.Adornee = instance
+        box.AlwaysOnTop = true
+        box.Size = instance.Size + Vector3.new(0.1, 0.1, 0.1) -- Чуть больше самого предмета
+        box.Color3 = color
+        box.Transparency = 0.2
+        box.Parent = instance
+        return box
+    end
+    return nil
+end
+
 local function updateESP()
-    if not Config.ESP_PLAYERS and not Config.ESP_MONSTERS then
+    if not Config.ESP_PLAYERS and not Config.ESP_MONSTERS and not Config.ESP_ITEMS then
         for obj, data in pairs(trackedESP) do
-            if data.Box then data.Box:Destroy() end
+            if data.Outline then data.Outline:Destroy() end
             if data.HP then data.HP:Destroy() end
         end
         trackedESP = {}
         return
     end
 
+    -- Игроки
     if Config.ESP_PLAYERS then
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") then
                 local char = plr.Character
                 local humanoid = char.Humanoid
-                
                 if not trackedESP[char] then
-                    local box = Instance.new("BoxHandleAdornment")
-                    box.Adornee = char
-                    box.AlwaysOnTop = true
-                    box.Size = char:GetExtentsSize()
-                    box.Color3 = Color3.fromRGB(255, 0, 0)
-                    box.Transparency = 0.5
-                    box.Parent = char
-                    
+                    local outline = applyOutline(char, Color3.fromRGB(255, 0, 0))
                     local hp, fill, txt = createHealthBar(char, false)
-                    trackedESP[char] = {Box = box, HP = hp, Fill = fill, Text = txt, Hum = humanoid}
+                    trackedESP[char] = {Outline = outline, HP = hp, Fill = fill, Text = txt, Hum = humanoid}
                 end
-                
                 if Config.SHOW_HEALTH and trackedESP[char] then
                     local h = math.clamp(humanoid.Health, 0, humanoid.MaxHealth)
-                    local p = h / humanoid.MaxHealth
-                    trackedESP[char].Fill.Size = UDim2.new(p, 0, 1, 0)
+                    trackedESP[char].Fill.Size = UDim2.new(h / humanoid.MaxHealth, 0, 1, 0)
                     trackedESP[char].Text.Text = tostring(math.floor(h))
                 end
             end
         end
     end
     
+    -- Монстры
     if Config.ESP_MONSTERS then
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("Model") then
                 for _, name in ipairs(Config.MONSTER_NAMES) do
-                    if obj.Name:lower():find(name:lower()) then
+                    if obj.Name:lower():find(name:lower()) and not trackedESP[obj] then
+                        local outline = applyOutline(obj, Color3.fromRGB(0, 170, 255))
                         local humanoid = obj:FindFirstChildOfClass("Humanoid")
-                        
-                        if not trackedESP[obj] then
-                            local box = Instance.new("BoxHandleAdornment")
-                            box.Adornee = obj
-                            box.AlwaysOnTop = true
-                            box.Size = obj:GetExtentsSize()
-                            box.Color3 = Color3.fromRGB(0, 170, 255)
-                            box.Transparency = 0.5
-                            box.Parent = obj
-                            
-                            local hp, fill, txt = createHealthBar(obj, true)
-                            trackedESP[obj] = {Box = box, HP = hp, Fill = fill, Text = txt, Hum = humanoid}
-                        end
-                        
-                        if Config.SHOW_HEALTH and humanoid and trackedESP[obj] then
-                            local h = math.clamp(humanoid.Health, 0, humanoid.MaxHealth)
-                            local p = h / humanoid.MaxHealth
-                            trackedESP[obj].Fill.Size = UDim2.new(p, 0, 1, 0)
-                            trackedESP[obj].Text.Text = tostring(math.floor(h))
-                        end
+                        local hp, fill, txt = createHealthBar(obj, true)
+                        trackedESP[obj] = {Outline = outline, HP = hp, Fill = fill, Text = txt, Hum = humanoid}
+                    end
+                end
+                if trackedESP[obj] and trackedESP[obj].Hum and Config.SHOW_HEALTH then
+                    local h = math.clamp(trackedESP[obj].Hum.Health, 0, trackedESP[obj].Hum.MaxHealth)
+                    trackedESP[obj].Fill.Size = UDim2.new(h / trackedESP[obj].Hum.MaxHealth, 0, 1, 0)
+                    trackedESP[obj].Text.Text = tostring(math.floor(h))
+                end
+            end
+        end
+    end
+
+    -- Предметы (Аптечки, патроны)
+    if Config.ESP_ITEMS then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if (obj:IsA("Model") or obj:IsA("BasePart")) and not trackedESP[obj] then
+                for _, itemName in ipairs(Config.ITEM_NAMES) do
+                    if obj.Name:lower():find(itemName:lower()) then
+                        local outline = applyOutline(obj, Color3.fromRGB(0, 255, 0)) -- Зеленый для предметов
+                        trackedESP[obj] = {Outline = outline}
+                        break
                     end
                 end
             end
@@ -247,7 +261,7 @@ local function updateESP()
 end
 
 -- ==========================================
--- UI (Custom Lightweight Menu)
+-- UI
 -- ==========================================
 local function createCustomUI()
     local ScreenGui = Instance.new("ScreenGui")
@@ -257,8 +271,8 @@ local function createCustomUI()
     if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 260, 0, 360) 
-    MainFrame.Position = UDim2.new(0.5, -130, 0.5, -180)
+    MainFrame.Size = UDim2.new(0, 260, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -130, 0.5, -200)
     MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -269,7 +283,7 @@ local function createCustomUI()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 0, 35)
     Title.BackgroundColor3 = Color3.fromRGB(35, 0, 50)
-    Title.Text = "SERVERBLIGHT [Auto-Farm]"
+    Title.Text = "SERVERBLIGHT [Ultimate]"
     Title.TextColor3 = Color3.fromRGB(200, 150, 255)
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 14
@@ -293,7 +307,6 @@ local function createCustomUI()
         btn.TextSize = 12
         btn.Parent = Content
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-        
         local state = defaultState
         btn.MouseButton1Click:Connect(function()
             state = not state
@@ -315,7 +328,6 @@ local function createCustomUI()
         btn.TextSize = 12
         btn.Parent = Content
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-        
         btn.MouseButton1Click:Connect(function()
             btn.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
             task.wait(0.1)
@@ -326,34 +338,24 @@ local function createCustomUI()
 
     createToggle("ESP Players", 0, Config.ESP_PLAYERS, function(s) Config.ESP_PLAYERS = s end)
     createToggle("ESP Monsters", 35, Config.ESP_MONSTERS, function(s) Config.ESP_MONSTERS = s end)
-    createToggle("Health Bars", 70, Config.SHOW_HEALTH, function(s) Config.SHOW_HEALTH = s end)
-    createToggle("Fullbright", 105, Config.FULLBRIGHT, function(s) 
-        Config.FULLBRIGHT = s
-        toggleFullbright(s)
-    end)
-    createToggle("Infinite Ammo", 140, Config.INF_AMMO, function(s) Config.INF_AMMO = s end)
+    createToggle("ESP Items", 70, Config.ESP_ITEMS, function(s) Config.ESP_ITEMS = s end)
+    createToggle("Health Bars", 105, Config.SHOW_HEALTH, function(s) Config.SHOW_HEALTH = s end)
+    createToggle("Fullbright", 140, Config.FULLBRIGHT, function(s) Config.FULLBRIGHT = s; toggleFullbright(s) end)
+    createToggle("Infinite Ammo", 175, Config.INF_AMMO, function(s) Config.INF_AMMO = s end)
     
-    local autoBtn = createToggle("Auto Intel Farm", 175, Config.AUTO_INTEL, function(s) Config.AUTO_INTEL = s end)
+    local autoBtn = createToggle("Auto Intel Farm", 210, Config.AUTO_INTEL, function(s) Config.AUTO_INTEL = s end)
     autoBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
 
-    createButton("Teleport to Enemy Intel", 220, function()
+    createButton("TP to Enemy Intel", 255, function()
         local intel = getBriefcase("Blue")
         if intel then teleportTo(intel.Position + Vector3.new(0, 3, 0)) end
     end)
-
-    createButton("Teleport to Red Drop Zone", 255, function()
+    createButton("TP to Red Drop Zone", 290, function()
         local dropZone = getBriefcase("Red")
         if dropZone then teleportTo(dropZone.Position + Vector3.new(0, 3, 0)) end
     end)
 end
 
--- ==========================================
--- INITIALIZATION
--- ==========================================
 createCustomUI()
-
-RunService.RenderStepped:Connect(function()
-    updateESP()
-end)
-
-print("[+] SERVERBLIGHT Utility loaded (Mobile Auto-Farm).")
+RunService.RenderStepped:Connect(updateESP)
+print("[+] SERVERBLIGHT Utility loaded (Ultimate).")
