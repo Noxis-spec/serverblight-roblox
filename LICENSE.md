@@ -1,6 +1,13 @@
-MIT License
+# MIT License
 
-Copyright (c) 2024 Noxis
+**Copyright (c) 2024 Noxis**
+
+---
+
+### 📜 Summary
+This is a permissive free software license. It puts very few restrictions on the use and distribution of the software. You are free to use, modify, and distribute this software, provided that the original copyright notice and this permission notice are included.
+
+### 📄 Full License Text
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +26,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+### 👨‍💻 About the Author
+- **Project:** SERVERBLIGHT Utility Script
+- **Author:** Noxis
+- **Year:** 2024
+
+### ⚠️ Disclaimer
+This software is provided for **educational purposes only**. The author does not endorse or encourage the use of this software to violate the Terms of Service of any platform (including Roblox). The author is not liable for any account bans, penalties, or damages resulting from the use of this code.
