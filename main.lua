@@ -1,5 +1,5 @@
 -- ==========================================
--- SERVERBLIGHT HUB - Empty Template (with Main)
+-- SERVERBLIGHT HUB - Template (Optimized Tabs)
 -- ==========================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -14,30 +14,23 @@ local Window = Rayfield:CreateWindow({
 
 -- 1. Main
 local MainTab = Window:CreateTab("Main", 4483362458)
--- Сюда будем добавлять главные функции (быстрый старт, важные кнопки)
 
--- 2. Visual
-local VisualTab = Window:CreateTab("Visual", 4483362458)
--- Сюда будем добавлять ESP, Fullbright и т.д.
+-- 2. Visuals
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 
 -- 3. Farm
 local FarmTab = Window:CreateTab("Farm", 4483362458)
--- Сюда будем добавлять кнопки авто-фарма
 
 -- 4. Teleports
-local TpTab = Window:CreateTab("Teleports", 4483362458)
--- Сюда будем добавлять кнопки телепортации
+local TeleportsTab = Window:CreateTab("Teleports", 4483362458)
 
--- 5. Misc
-local MiscTab = Window:CreateTab("Misc", 4483362458)
--- Сюда будем добавлять Noclip, Infinite Ammo и т.д.
+-- 5. Utility
+local UtilityTab = Window:CreateTab("Utility", 4483362458)
 
--- 6. Info
-local InfoTab = Window:CreateTab("Info", 4483362458)
--- Сюда будем добавлять информацию об авторе и ссылки
+-- 6. Configs
+local ConfigsTab = Window:CreateTab("Configs", 4483362458)
 
--- 7. Settings
-local SettingsTab = Window:CreateTab("Settings", 4483362458)
--- Сюда будем добавлять настройки
+-- 7. Credits
+local CreditsTab = Window:CreateTab("Credits", 4483362458)
 
-print("[+] SERVERBLIGHT HUB (Template) Loaded.")
+print("[+] SERVERBLIGHT HUB (Optimized Template) Loaded.")
