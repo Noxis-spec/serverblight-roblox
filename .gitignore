@@ -6,6 +6,11 @@
 *.exe
 /workspace/
 /Workspace/
+/Dump/
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
 
 # ==========================================
 # Editors and IDEs
