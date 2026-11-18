@@ -1,5 +1,10 @@
 # SERVERBLIGHT Utility Hub
 
+![Lua](https://img.shields.io/badge/Language-Lua-blue?style=for-the-badge&logo=lua)
+![Roblox](https://img.shields.io/badge/Platform-Roblox-red?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0-orange?style=for-the-badge)
+
 A multifunctional utility script hub designed for the fan-made Roblox game **SERVERBLIGHT**. 
 This project provides essential visual overlays, survival tools, and automated farming for the Red Team.
 
