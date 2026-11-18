@@ -1,5 +1,5 @@
 -- ==========================================
--- FEATURE: ESP (Players & Monsters)
+-- FEATURE: ESP (Clean Outlines Only)
 -- ==========================================
 
 local Players = game:GetService("Players")
@@ -7,7 +7,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
--- Создаем глобальную таблицу настроек, если ее нет
+-- Глобальные настройки
 _G.BlightESP = _G.BlightESP or {
     Enabled = true,
     ShowHealth = true,
@@ -16,7 +16,7 @@ _G.BlightESP = _G.BlightESP or {
 
 local trackedESP = {}
 
--- Функция создания полоски здоровья
+-- Создаем полоску здоровья (как в Pulse)
 local function createHealthBar(adornee, isMonster)
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "ESP_HP"
@@ -53,25 +53,26 @@ local function createHealthBar(adornee, isMonster)
     return billboard, fill, text
 end
 
--- Универсальная обводка
+-- Функция создания чистой обводки
 local function applyOutline(instance, color)
     if instance:IsA("Model") then
-        local h = Instance.new("Highlight")
-        h.Adornee = instance
-        h.FillTransparency = 1 
-        h.OutlineColor = color
-        h.OutlineTransparency = 0
-        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        h.Parent = instance
-        return h
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESP_Outline"
+        highlight.Adornee = instance
+        highlight.FillTransparency = 1      -- Убираем заливку (только контур)
+        highlight.OutlineColor = color      -- Цвет контура
+        highlight.OutlineTransparency = 0   -- Контур не прозрачный
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Видно сквозь стены
+        highlight.Parent = instance
+        return highlight
     end
     return nil
 end
 
--- Основной цикл обновления
+-- Основной цикл
 RunService.RenderStepped:Connect(function()
     if not _G.BlightESP.Enabled then
-        -- Если выключено, удаляем всё
+        -- Очистка, если ESP выключен
         for obj, data in pairs(trackedESP) do
             if data.Outline then data.Outline:Destroy() end
             if data.HP then data.HP:Destroy() end
@@ -80,7 +81,7 @@ RunService.RenderStepped:Connect(function()
         return
     end
 
-    -- 1. Игроки
+    -- 1. Игроки (Красная обводка)
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") then
             local char = plr.Character
@@ -92,6 +93,7 @@ RunService.RenderStepped:Connect(function()
                 trackedESP[char] = {Outline = outline, HP = hp, Fill = fill, Text = txt, Hum = humanoid}
             end
             
+            -- Обновление ХП
             if _G.BlightESP.ShowHealth and trackedESP[char] then
                 local h = math.clamp(humanoid.Health, 0, humanoid.MaxHealth)
                 trackedESP[char].Fill.Size = UDim2.new(h / humanoid.MaxHealth, 0, 1, 0)
@@ -100,7 +102,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- 2. Монстры
+    -- 2. Монстры (Синяя обводка)
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") then
             for _, name in ipairs(_G.BlightESP.MonsterNames) do
@@ -111,6 +113,7 @@ RunService.RenderStepped:Connect(function()
                         trackedESP[obj] = {Outline = outline, HP = hp, Fill = fill, Text = txt, Hum = obj:FindFirstChildOfClass("Humanoid")}
                     end
                     
+                    -- Обновление ХП
                     if _G.BlightESP.ShowHealth and trackedESP[obj].Hum then
                         local h = math.clamp(trackedESP[obj].Hum.Health, 0, trackedESP[obj].Hum.MaxHealth)
                         trackedESP[obj].Fill.Size = UDim2.new(h / trackedESP[obj].Hum.MaxHealth, 0, 1, 0)
@@ -122,4 +125,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("[+] ESP Module Loaded.")
+print("[+] ESP Module Loaded (Clean Outlines).")
