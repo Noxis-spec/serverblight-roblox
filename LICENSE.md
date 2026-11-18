@@ -1,6 +1,6 @@
 # MIT License
 
-**Copyright (c) 2024 Noxis**
+**Copyright (c) 2026 Noxis**
 
 ---
 
@@ -34,9 +34,9 @@ SOFTWARE.
 
 | Field | Information |
 | :--- | :--- |
-| **Project Name** | SERVERBLIGHT Utility Script |
+| **Project Name** | SERVERBLIGHT Utility Hub |
 | **Author** | Noxis |
-| **Year** | 2024 |
+| **Year** | 2026 |
 | **License Type** | MIT (Massachusetts Institute of Technology) |
 
 ## Disclaimer
