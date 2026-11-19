@@ -93,16 +93,7 @@ RunService.RenderStepped:Connect(function()
 
                 if plr then
                     if plr == LocalPlayer then continue end
-                    if plr.Team == LocalPlayer.Team then
-                        color = Color3.fromRGB(0, 255, 0)
-                    end
-                else
-                    local team = obj:FindFirstChild("Team")
-                    if team and team.Value == "Red" then
-                        color = Color3.fromRGB(0, 255, 0)
-                    else
-                        color = Color3.fromRGB(0, 170, 255)
-                    end
+                    color = Color3.fromRGB(255, 255, 255)
                 end
 
                 if not trackedESP[obj] then
