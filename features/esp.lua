@@ -1,4 +1,4 @@
--- ESP Module
+-- ESP Module (Optimized)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,8 +17,8 @@ local function makeHealthBar(model, color)
     local bb = Instance.new("BillboardGui")
     bb.Name = "ESP_HP"
     bb.Adornee = model
-    bb.Size = UDim2.new(0, 70, 0, 14)
-    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.Size = UDim2.new(0, 55, 0, 10)
+    bb.StudsOffset = Vector3.new(0, 3.8, 0)
     bb.AlwaysOnTop = true
     bb.Parent = model
 
@@ -27,14 +27,14 @@ local function makeHealthBar(model, color)
     bg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     bg.BorderSizePixel = 0
     bg.Parent = bb
-    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 3)
 
     local fill = Instance.new("Frame")
     fill.Size = UDim2.new(1, 0, 1, 0)
     fill.BackgroundColor3 = color
     fill.BorderSizePixel = 0
     fill.Parent = bg
-    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
 
     local txt = Instance.new("TextLabel")
     txt.Size = UDim2.new(1, 0, 1, 0)
@@ -43,7 +43,7 @@ local function makeHealthBar(model, color)
     txt.TextColor3 = Color3.fromRGB(255, 255, 255)
     txt.TextStrokeTransparency = 0.5
     txt.Font = Enum.Font.GothamBold
-    txt.TextSize = 10
+    txt.TextSize = 9
     txt.Parent = bg
 
     return bb, fill, txt
@@ -72,44 +72,64 @@ local function checkIgnore(name)
     return false
 end
 
-RunService.RenderStepped:Connect(function()
-    if not _G.BlightESP.Enabled then
-        for obj, data in pairs(trackedESP) do
-            if data.Outline then data.Outline:Destroy() end
-            if data.HP then data.HP:Destroy() end
+-- 1. ОПТИМИЗАЦИЯ: Сканируем карту раз в секунду, а не каждый кадр
+task.spawn(function()
+    while task.wait(1) do
+        if not _G.BlightESP.Enabled then
+            -- Если ESP выключено, очищаем все
+            for obj, data in pairs(trackedESP) do
+                if data.Outline then data.Outline:Destroy() end
+                if data.HP then data.HP:Destroy() end
+            end
+            trackedESP = {}
+            continue
         end
-        trackedESP = {}
-        return
-    end
 
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and not checkIgnore(obj.Name) then
+        -- Проходимся по тем, кого уже нашли, и проверяем, не умерли ли они
+        for obj, data in pairs(trackedESP) do
             local hum = obj:FindFirstChildOfClass("Humanoid")
-            local hrp = obj:FindFirstChild("HumanoidRootPart")
-            
-            if hum and hrp then
-                local color = Color3.fromRGB(255, 0, 0)
-                local plr = Players:GetPlayerFromCharacter(obj)
+            if not obj or not obj.Parent or not hum or hum.Health <= 0 then
+                if data.Outline then data.Outline:Destroy() end
+                if data.HP then data.HP:Destroy() end
+                trackedESP[obj] = nil
+            end
+        end
 
-                if plr then
-                    if plr == LocalPlayer then continue end
-                    color = Color3.fromRGB(255, 255, 255)
-                end
+        -- Ищем новых (только раз в секунду)
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and not trackedESP[obj] and not checkIgnore(obj.Name) then
+                local hum = obj:FindFirstChildOfClass("Humanoid")
+                local hrp = obj:FindFirstChild("HumanoidRootPart")
+                
+                if hum and hrp and hum.Health > 0 then
+                    local color = Color3.fromRGB(255, 0, 0)
+                    local plr = Players:GetPlayerFromCharacter(obj)
 
-                if not trackedESP[obj] then
+                    if plr then
+                        if plr == LocalPlayer then continue end
+                        color = Color3.fromRGB(255, 255, 255)
+                    end
+
                     local hl = makeOutline(obj, color)
                     local bb, fill, txt = makeHealthBar(obj, color)
                     trackedESP[obj] = {Outline = hl, HP = bb, Fill = fill, Text = txt, Hum = hum}
-                end
-                
-                if _G.BlightESP.ShowHealth and trackedESP[obj] then
-                    local h = math.clamp(hum.Health, 0, hum.MaxHealth)
-                    trackedESP[obj].Fill.Size = UDim2.new(h / hum.MaxHealth, 0, 1, 0)
-                    trackedESP[obj].Text.Text = tostring(math.floor(h))
                 end
             end
         end
     end
 end)
 
-print("ESP loaded.")
+-- 2. Каждый кадр (RenderStepped) обновляем ТОЛЬКО полоску ХП у уже найденных
+RunService.RenderStepped:Connect(function()
+    if not _G.BlightESP.Enabled then return end
+    
+    for obj, data in pairs(trackedESP) do
+        if data.Hum and data.Fill and _G.BlightESP.ShowHealth then
+            local h = math.clamp(data.Hum.Health, 0, data.Hum.MaxHealth)
+            data.Fill.Size = UDim2.new(h / data.Hum.MaxHealth, 0, 1, 0)
+            data.Text.Text = tostring(math.floor(h))
+        end
+    end
+end)
+
+print("ESP loaded (Optimized).")
