@@ -1,4 +1,4 @@
--- ESP Module (Optimized)
+-- ESP Module (Players & Monsters only)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -11,7 +11,6 @@ _G.BlightESP = _G.BlightESP or {
 }
 
 local trackedESP = {}
-local ignoreList = {"Sentry", "Dispenser", "Teleporter", "Sentry2", "Sentry3"}
 
 local function makeHealthBar(model, color)
     local bb = Instance.new("BillboardGui")
@@ -63,20 +62,9 @@ local function makeOutline(model, color)
     end
 end
 
-local function checkIgnore(name)
-    for _, v in ipairs(ignoreList) do
-        if name:lower():find(v:lower()) then
-            return true
-        end
-    end
-    return false
-end
-
--- 1. ОПТИМИЗАЦИЯ: Сканируем карту раз в секунду, а не каждый кадр
 task.spawn(function()
     while task.wait(1) do
         if not _G.BlightESP.Enabled then
-            -- Если ESP выключено, очищаем все
             for obj, data in pairs(trackedESP) do
                 if data.Outline then data.Outline:Destroy() end
                 if data.HP then data.HP:Destroy() end
@@ -85,7 +73,6 @@ task.spawn(function()
             continue
         end
 
-        -- Проходимся по тем, кого уже нашли, и проверяем, не умерли ли они
         for obj, data in pairs(trackedESP) do
             local hum = obj:FindFirstChildOfClass("Humanoid")
             if not obj or not obj.Parent or not hum or hum.Health <= 0 then
@@ -95,19 +82,19 @@ task.spawn(function()
             end
         end
 
-        -- Ищем новых (только раз в секунду)
         for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") and not trackedESP[obj] and not checkIgnore(obj.Name) then
+            if obj:IsA("Model") and not trackedESP[obj] then
                 local hum = obj:FindFirstChildOfClass("Humanoid")
                 local hrp = obj:FindFirstChild("HumanoidRootPart")
                 
                 if hum and hrp and hum.Health > 0 then
-                    local color = Color3.fromRGB(255, 0, 0)
+                    -- Цвет: Свои - красные, Боты - синие
+                    local color = Color3.fromRGB(0, 170, 255) 
                     local plr = Players:GetPlayerFromCharacter(obj)
-
+                    
                     if plr then
                         if plr == LocalPlayer then continue end
-                        color = Color3.fromRGB(255, 255, 255)
+                        color = Color3.fromRGB(255, 0, 0) 
                     end
 
                     local hl = makeOutline(obj, color)
@@ -119,10 +106,8 @@ task.spawn(function()
     end
 end)
 
--- 2. Каждый кадр (RenderStepped) обновляем ТОЛЬКО полоску ХП у уже найденных
 RunService.RenderStepped:Connect(function()
     if not _G.BlightESP.Enabled then return end
-    
     for obj, data in pairs(trackedESP) do
         if data.Hum and data.Fill and _G.BlightESP.ShowHealth then
             local h = math.clamp(data.Hum.Health, 0, data.Hum.MaxHealth)
@@ -132,4 +117,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("ESP loaded (Optimized).")
+print("ESP loaded.")
